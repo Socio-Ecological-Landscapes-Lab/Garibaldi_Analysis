@@ -2,8 +2,6 @@
 library(readxl)
 library(dplyr)
 library(openxlsx)
-library(gitcreds)
-library(usethis)
 
 # Assume your dataset is loaded into a data frame called 'data'
 # For example:
