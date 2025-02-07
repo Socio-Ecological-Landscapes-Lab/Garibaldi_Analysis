@@ -26,4 +26,4 @@ merged_data <- merged_data %>%
   select(-original_order)
 
 # Write merged data to new sheet in 2022 point frame data 
-write.xlsx(merged_data, "/Users/lizmccleary/Desktop/Garibaldi_Analysis-1/merged_data_2022.xlsx", sheetName = "merged_data_2022", append = TRUE)
+write.xlsx(merged_data, "/Users/lizmccleary/Desktop/Garibaldi_Analysis-1/merged_data_2022.xlsx", sheetName = "merged_data_2022")
