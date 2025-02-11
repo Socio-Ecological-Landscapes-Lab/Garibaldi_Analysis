@@ -1,4 +1,4 @@
-setwd("~/Desktop/ITEX Iceland/Stat")
+setwd("~/Desktop/Garibaldi_Analysis-1")
 
 library(ggplot2)
 #library(ggvegan)
@@ -37,75 +37,87 @@ ggsave("clim_plot.tiff", clim_plot, dpi = 300)
 ##################################################
 
 #Calculate changes in vegetation
-dataset2020 <-read_xlsx("ITEX_Iceland95-2019synth2022.xlsx")%>% 
-  mutate(Hit=as.numeric(Hit))%>%
- group_by(SITE,YEAR,TRTMT,PLOT,X,Y)%>% 
-  mutate(position=case_when(Hit==max(Hit) ~ "understory",
-                            Hit==1 & max(Hit)!=1~"canopy",
-                            TRUE~"middle"))%>% 
+dataset <-read_xlsx("/Users/lizmccleary/Desktop/Garibaldi_Analysis-1/merged_2022_2024.xlsx")%>% 
+  group_by(SITE,DATE,TRTMT,PLOT,X,Y,SPECIES)%>% 
+  mutate(position=case_when(HitOrder=="Bottom" ~ "understory",
+                            HitOrder=="Top"~"canopy",
+                            is.na(HitOrder)~"middle"))%>% 
   ungroup()
-                              
-allDataCanopy <- dataset2020 %>%
+
+                    
+allDataCanopy <- dataset %>%
                   filter(position=="canopy")
 
-allDataUnder<- dataset2020 %>%
+allDataUnder<- dataset %>%
   filter(position=="understory")
 
-allDataTopBottom <- dataset2020 %>%
+allDataTopBottom <- dataset %>%
   filter(!position=="middle")
-
 
 ##Top and bottom total species cover
 coverTopBottom <- allDataTopBottom%>% 
-        select(SITE, TRTMT, PLOT, YEAR, SPP, Hit)%>% 
-        mutate(SPP=as.factor(SPP))%>% 
-        group_by(YEAR,SITE, TRTMT,PLOT)%>% 
-        count(SPP, .drop = FALSE)%>% 
-        mutate(cover=n)
+  select(SITE, TRTMT, PLOT, DATE, SPECIES, HitOrder)%>% 
+  mutate(SPECIES=as.factor(SPECIES))%>% 
+  group_by(DATE, SITE, TRTMT, PLOT, SPECIES) %>% 
+  tally(name = "cover") %>%
+  ungroup()
 
 coverCanopy <- allDataCanopy%>% 
-  select(SITE, TRTMT, PLOT, YEAR, SPP, Hit)%>% 
-  mutate(SPP=as.factor(SPP))%>% 
-  group_by(YEAR,SITE, TRTMT,PLOT)%>% 
-  count(SPP, .drop = FALSE)%>% 
-  mutate(cover=n/100)
+  select(SITE, TRTMT, PLOT, DATE, SPECIES, HitOrder)%>% 
+  mutate(SPECIES=as.factor(SPECIES))%>% 
+  group_by(DATE,SITE,TRTMT,PLOT, SPECIES)%>% 
+  tally(name = "cover")%>% 
+  mutate(cover = cover/100)%>%
+  ungroup()
 
 coverUnder <- allDataUnder%>% 
-  select(SITE, TRTMT, PLOT, YEAR, SPP, Hit)%>% 
-  mutate(SPP=as.factor(SPP))%>% 
-  group_by(YEAR,SITE, TRTMT,PLOT)%>% 
-  count(SPP, .drop = FALSE)%>% 
-  mutate(cover=n/100)
+  select(SITE, TRTMT, PLOT, DATE, SPECIES, HitOrder)%>% 
+  mutate(SPECIES=as.factor(SPECIES))%>% 
+  group_by(DATE,SITE, TRTMT,PLOT, SPECIES)%>% 
+  tally(name = "cover")%>%
+  mutate(cover = cover/100)%>%
+  ungroup()
 
 #####################NMDS changes in species cover
 #Make wide format
 
-THIN <- coverTopBottom %>% 
-        filter(SITE=="THINGVELLIR")%>% 
-        select(YEAR,SITE,TRTMT,PLOT, SPP, cover)%>% 
-        pivot_wider(names_from = SPP, values_from = cover)
+SALIX<- coverTopBottom %>% 
+        filter(SITE=="Salix")%>% 
+        select(DATE,SITE,TRTMT,PLOT, SPECIES, cover)%>% 
+        pivot_wider(names_from = SPECIES, values_from = cover)
 
-THIN <- THIN[, colSums(THIN != 0) > 0]
+#Remove columns with all 0 or NA values 
+SALIX <- SALIX[, colSums(SALIX != 0, na.rm = TRUE) > 0]
 
+CASS <- coverTopBottom %>% 
+  filter(SITE=="Cassiope")%>% 
+  select(DATE,SITE,TRTMT,PLOT, SPECIES, cover)%>% 
+  pivot_wider(names_from = SPECIES, values_from = cover)
 
-AUD <- coverTopBottom %>% 
-  filter(SITE=="AUDKULUHEIDI")%>% 
-  select(YEAR,SITE,TRTMT,PLOT, SPP, cover)%>% 
-  pivot_wider(names_from = SPP, values_from = cover)
+CASS <- CASS[, colSums(CASS != 0, na.rm = TRUE) > 0]
 
-AUD  <- AUD[, colSums(AUD!= 0) > 0]
+MEAD <- coverTopBottom %>% 
+  filter(SITE=="Meadow")%>% 
+  select(DATE,SITE,TRTMT,PLOT, SPECIES, cover)%>% 
+  pivot_wider(names_from = SPECIES, values_from = cover)
+
+MEAD <- MEAD[, colSums(MEAD != 0, na.rm = TRUE) > 0]
 
 ###NMDS
-#Do NMDS for THIN
-year <- THIN [,1]
-TRTMT <- THIN [,3]
-veg<- THIN [,5:20]
+#Do NMDS for SALIX
+year <- SALIX [,1]
+TRTMT <- SALIX [,3]
+veg<- SALIX [,5:28]
+
+#veg contains some NA values, I could drop the rows and delete all of my data or replace the NA's with 0's
+#Changed all NA values to 0's 
+veg <- veg %>% mutate_all(~replace_na(., 0))
 
 veg.mds <- metaMDS(veg, distance = "bray",autotransform = F,k=3,trymax=300)
 
 site.scrs <- as.data.frame(scores(veg.mds, display = "sites"))
-site.scrsTHIN <- cbind(site.scrs, year,TRTMT)
-site.scrsTHIN$site<-"Thingvellir"
+site.scrsSALIX <- cbind(site.scrs, year,TRTMT)
+site.scrsSALIX$site<-"Salix"
 
 #fit environmental variables with envfit
 env<- cbind(year, TRTMT)
@@ -114,9 +126,9 @@ fit<-envfit(veg.mds, env)
 en_coord_cont = as.data.frame(scores(fit, "vectors")) * ordiArrowMul(fit)
 en_coord_cat = as.data.frame(scores(fit, "factors")) * ordiArrowMul(fit)
 
-#Plot THIN with envfit
+#Plot SALIX with envfit
 ggplot()+ 
-  geom_point(data=site.scrsTHIN, aes(NMDS1, NMDS2, colour = as.factor(YEAR), shape=factor(TRTMT)),
+  geom_point(data=site.scrsSALIX, aes(NMDS1, NMDS2, colour = as.factor(DATE), shape=factor(TRTMT)),
              size=3)+
   geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
                data = en_coord_cont, size =1, alpha = 0.5, colour = "grey30") +
@@ -129,16 +141,16 @@ ggplot()+
 
 #Run permanova
 veg.dist <- vegdist(veg, method="bray")
-adonis2(veg ~ TRTMT*YEAR, data = env, permutations = 999, method="bray", by = NULL)
+adonis2(veg ~ TRTMT*DATE, data = env, permutations = 999, method="bray", by = NULL)
 
 data(dune.env)
 
 
-#NMDS for AUD
+#NMDS for CASS
 
-year <- AUD [,1]
-TRTMT <- AUD[,3]
-veg<- AUD[,5:60]
+year <- CASS [,1]
+TRTMT <- CASS[,3]
+veg<- CASS[,5:60]
 
 veg.mds <- metaMDS(veg, distance = "bray",autotransform = F,k=3,trymax=300)
 
@@ -149,9 +161,26 @@ en_coord_cont = as.data.frame(scores(fit, "vectors")) * ordiArrowMul(fit)
 en_coord_cat = as.data.frame(scores(fit, "factors")) * ordiArrowMul(fit)
 
 site.scrs <- as.data.frame(scores(veg.mds, display = "sites"))
-site.scrsAUD <- cbind(site.scrs, year,TRTMT)
-site.scrsAUD$site<-"Audkuluheidi"
+site.scrsCASS <- cbind(site.scrs, year,TRTMT)
+site.scrsCASS$site<-"Cassiope"
 
+#NMDS for MEAD
+
+year <- MEAD [,1]
+TRTMT <- MEAD[,3]
+veg<- MEAD[,5:60]
+
+veg.mds <- metaMDS(veg, distance = "bray",autotransform = F,k=3,trymax=300)
+
+env<- cbind(year, TRTMT)
+fit<-envfit(veg.mds, env)
+
+en_coord_cont = as.data.frame(scores(fit, "vectors")) * ordiArrowMul(fit)
+en_coord_cat = as.data.frame(scores(fit, "factors")) * ordiArrowMul(fit)
+
+site.scrs <- as.data.frame(scores(veg.mds, display = "sites"))
+site.scrsMEAD <- cbind(site.scrs, year,TRTMT)
+site.scrsMEAD$site<-"Meadow"
 
 
 ggplot()+ 
@@ -168,8 +197,8 @@ geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2),
 
 
 
-site.scrsTotal<- rbind(site.scrsTHIN, site.scrsAUD)%>% 
-                  mutate(TRTMT = factor(TRTMT, levels = c("CTL", "OTC", "GRA"))) 
+site.scrsTotal<- rbind(site.scrsSALIX, site.scrsCASS, site.scrsMEAD)%>% 
+                  mutate(TRTMT = factor(TRTMT, levels = c("control", "warming"))) 
 
 
 ggplot()+ 
@@ -188,7 +217,7 @@ library(RColorBrewer)
 library(forcats)
 
 GFBROAD<- allDataTopBottom%>% 
-  select(SITE, TRTMT, PLOT, YEAR, GFBROAD, Hit)%>% 
+  select(SITE, TRTMT, PLOT, YEAR, GFBROAD, HitOrder)%>% 
   filter(!GFBROAD=="ABIOTIC",
     #     !GFBROAD=="SOIL",
          !GFBROAD=="FUNGI")%>% 
@@ -200,8 +229,8 @@ GFBROAD<- allDataTopBottom%>%
   ungroup()%>%
   group_by(YEAR,SITE, TRTMT,GFBROAD)%>%
   summarise(coverSITE=mean(cover))%>%
-mutate(TRTMT = factor(TRTMT, levels = c("CTL", "OTC", "GRA")))%>%
-  mutate(YEAR = factor(YEAR, levels = c("1995", "1997", "1998","2000","2007","2014", "2019")))%>%
+mutate(TRTMT = factor(TRTMT, levels = c("control", "warming")))%>%
+  mutate(YEAR = factor(YEAR, levels = c("2022", "2024")))%>%
   mutate(GFBROAD = factor(GFBROAD, levels = c("FORBSV", "GRAMINOID", "ESHRUB", 
                                             "DSHRUB", "MOSS", "LICHEN", 
                                             "LITTER", "SOIL")))%>%
@@ -211,7 +240,7 @@ mutate(TRTMT = factor(TRTMT, levels = c("CTL", "OTC", "GRA")))%>%
 ggsave("Cover_topBottom.tiff", last_plot(), dpi = 300)
 
 GFBROADtop<- allDataCanopy%>% 
-  select(SITE, TRTMT, PLOT, YEAR, GFBROAD, Hit)%>% 
+  select(SITE, TRTMT, PLOT, YEAR, GFBROAD, HitOrder)%>% 
   filter(!GFBROAD=="ABIOTIC",
          #     !GFBROAD=="SOIL",
          !GFBROAD=="FUNGI")%>% 
@@ -223,8 +252,8 @@ GFBROADtop<- allDataCanopy%>%
   ungroup()%>%
   group_by(YEAR,SITE, TRTMT,GFBROAD)%>%
   summarise(coverSITE=mean(cover))%>%
-  mutate(TRTMT = factor(TRTMT, levels = c("CTL", "OTC", "GRA")))%>%
-  mutate(YEAR = factor(YEAR, levels = c("1995", "1997", "1998","2000","2007","2014", "2019")))%>%
+  mutate(TRTMT = factor(TRTMT, levels = c("control", "warming")))%>%
+  mutate(YEAR = factor(YEAR, levels = c("2022", "2024")))%>%
   mutate(GFBROAD = factor(GFBROAD, levels = c("FORBSV", "GRAMINOID", "ESHRUB", 
                                               "DSHRUB", "MOSS", "LICHEN", 
                                               "LITTER", "SOIL")))
@@ -262,41 +291,36 @@ ggplot(data=GFBROADtop,aes(x=YEAR, y=coverSITE, fill=GFBROAD)) +
 ###########################################
 ####CHANGE IN HEIGHT
 
-dataset2020 <-read_xlsx("./ITEX_Iceland95-2019synth2022.xlsx")
+dataset <-read_xlsx("merged_2022_2024.xlsx")
 
-Height_AUD<-dataset2020%>%
-              filter(SITE=="AUDKULUHEIDI")%>%
+Height_SAL<-dataset%>%
+              filter(SITE=="SALIX")%>%
               filter(Hit==1)%>%
-              select(YEAR,TRTMT, PLOT, Height)%>%
-              mutate(Height=as.numeric(Height))%>%
+              select(YEAR,TRTMT, PLOT, CanopyHeight.mm.)%>%
+              mutate(CanopyHeight.mm.=as.numeric(CanopyHeight.mm.))%>%
               na.omit()%>%
               group_by(YEAR,TRTMT, PLOT)%>%
-              summarise(mean_height=mean(Height))%>%
-              mutate(TRTMT = factor(TRTMT, levels = c("CTL", "OTC", "GRA")))
+              summarise(mean_height=mean(CanopyHeight.mm.))%>%
+              mutate(TRTMT = factor(TRTMT, levels = c("control", "warming")))
 
 prior2 <- list(R = list(V = 1, nu = 0.002), 
                G = list(G1 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000), 
                         G2 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000)))
 
 
-AUD_Height_CTL <- MCMCglmm(mean_height ~ I(YEAR-1996), 
-                             random = ~ YEAR+PLOT, data = Height_AUD[Height_AUD$TRTMT == "CTL",], 
+SALIX_Height_CTL <- MCMCglmm(mean_height ~ I(YEAR-2022), 
+                             random = ~ YEAR+PLOT, data = Height_SAL[Height_SAL$TRTMT == "control",], 
                              family = "gaussian", pr = TRUE, nitt = 100000, 
                              burnin = 20000, prior = prior2)
 
-AUD_Height_OTC <- MCMCglmm(mean_height ~ I(YEAR-1996), 
-                           random = ~ YEAR+PLOT, data = Height_AUD[Height_AUD$TRTMT == "OTC",], 
-                           family = "gaussian", pr = TRUE, nitt = 100000, 
-                           burnin = 20000, prior = prior2)
-
-AUD_Height_GRA <- MCMCglmm(mean_height ~ I(YEAR-1996), 
-                           random = ~ YEAR+PLOT, data = Height_AUD[Height_AUD$TRTMT == "GRA",], 
+SALIX_Height_OTC <- MCMCglmm(mean_height ~ I(YEAR-2022), 
+                           random = ~ YEAR+PLOT, data = Height_SAL[Height_SAL$TRTMT == "warming",], 
                            family = "gaussian", pr = TRUE, nitt = 100000, 
                            burnin = 20000, prior = prior2)
 
 #Test difference between treatment
-canopy_m <- MCMCglmm(mean_height ~ I(YEAR-1996)+TRTMT-1, random = ~ YEAR + PLOT,
-                            data = Height_AUD, 
+canopy_m <- MCMCglmm(mean_height ~ I(YEAR-2022)+TRTMT-1, random = ~ YEAR + PLOT,
+                            data = Height_SAL, 
                             family = "gaussian", pr = TRUE, nitt = 100000, 
                             burnin = 20000, prior = prior2)
 
@@ -306,88 +330,62 @@ canopy_m <- MCMCglmm(mean_height ~ I(YEAR-1996)+TRTMT-1, random = ~ YEAR + PLOT,
 
 #CTL
 nyears <- 23
-niter <- length(AUD_Height_CTL$Sol[,"(Intercept)"])
+niter <- length(SALIX_Height_CTL$Sol[,"(Intercept)"])
 
-AUD_Height_CTLpreds <- array(NA, dim = c(niter,nyears))
+SALIX_Height_CTLpreds <- array(NA, dim = c(niter,nyears))
 
 for (i in 1:niter){
   for (j in 1:nyears){
-    AUD_Height_CTLpreds[i,j] <- AUD_Height_CTL$Sol[i,"(Intercept)"] + AUD_Height_CTL$Sol[i,"I(YEAR - 1996)"]*j
+    SALIX_Height_CTLpreds[i,j] <- SALIX_Height_CTL$Sol[i,"(Intercept)"] + SALIX_Height_CTL$Sol[i,"I(YEAR - 2022)"]*j
   }
 }
 
 
-AUD_Height_CTLpreds_df <- array(NA, dim = c(nyears,3))
+SALIX_Height_CTLpreds_df <- array(NA, dim = c(nyears,3))
 
 for (i in 1:nyears){
-  AUD_Height_CTLpreds_df [i,] <- quantile(AUD_Height_CTLpreds[,i], c(0.025, 0.5, 0.975))
+  SALIX_Height_CTLpreds_df [i,] <- quantile(SALIX_Height_CTLpreds[,i], c(0.025, 0.5, 0.975))
 }
 
-AUD_Height_CTLpreds_df <- cbind.data.frame(lower = AUD_Height_CTLpreds_df[,1], 
-                                               mean = AUD_Height_CTLpreds_df[,2], 
-                                               upper = AUD_Height_CTLpreds_df[,3], year = seq(1:23))
+SALIX_Height_CTLpreds_df <- cbind.data.frame(lower = SALIX_Height_CTLpreds_df[,1], 
+                                               mean = SALIX_Height_CTLpreds_df[,2], 
+                                               upper = SALIX_Height_CTLpreds_df[,3], year = seq(1:23))
 #OTC
 nyears <- 23
-niter <- length(AUD_Height_OTC$Sol[,"(Intercept)"])
+niter <- length(SALIX_Height_OTC$Sol[,"(Intercept)"])
 
-AUD_Height_OTCpreds <- array(NA, dim = c(niter,nyears))
+SALIX_Height_OTCpreds <- array(NA, dim = c(niter,nyears))
 
 for (i in 1:niter){
   for (j in 1:nyears){
-    AUD_Height_OTCpreds[i,j] <- AUD_Height_OTC$Sol[i,"(Intercept)"] + AUD_Height_OTC$Sol[i,"I(YEAR - 1996)"]*j
+    SALIX_Height_OTCpreds[i,j] <- SALIX_Height_OTC$Sol[i,"(Intercept)"] + SALIX_Height_OTC$Sol[i,"I(YEAR - 2022)"]*j
   }
 }
 
 
-AUD_Height_OTCpreds_df <- array(NA, dim = c(nyears,3))
+SALIX_Height_OTCpreds_df <- array(NA, dim = c(nyears,3))
 
 for (i in 1:nyears){
-  AUD_Height_OTCpreds_df [i,] <- quantile(AUD_Height_OTCpreds[,i], c(0.025, 0.5, 0.975))
+  SALIX_Height_OTCpreds_df [i,] <- quantile(SALIX_Height_OTCpreds[,i], c(0.025, 0.5, 0.975))
 }
 
-AUD_Height_OTCpreds_df <- cbind.data.frame(lower = AUD_Height_OTCpreds_df[,1], 
-                                               mean =AUD_Height_OTCpreds_df[,2], 
-                                               upper = AUD_Height_OTCpreds_df[,3], year = seq(1:23))
-
-#GRA
-nyears <- 23
-niter <- length(AUD_Height_GRA$Sol[,"(Intercept)"])
-
-AUD_Height_GRApreds <- array(NA, dim = c(niter,nyears))
-
-for (i in 1:niter){
-  for (j in 1:nyears){
-    AUD_Height_GRApreds[i,j] <- AUD_Height_GRA$Sol[i,"(Intercept)"] + AUD_Height_GRA$Sol[i,"I(YEAR - 1996)"]*j
-  }
-}
-
-
-AUD_Height_GRApreds_df <- array(NA, dim = c(nyears,3))
-
-for (i in 1:nyears){
-  AUD_Height_GRApreds_df [i,] <- quantile(AUD_Height_GRApreds[,i], c(0.025, 0.5, 0.975))
-}
-
-AUD_Height_GRApreds_df <- cbind.data.frame(lower = AUD_Height_GRApreds_df[,1], 
-                                               mean = AUD_Height_GRApreds_df[,2], 
-                                               upper = AUD_Height_GRApreds_df[,3], year = seq(1:23))
-
+SALIX_Height_OTCpreds_df <- cbind.data.frame(lower = SALIX_Height_OTCpreds_df[,1], 
+                                               mean = SALIX_Height_OTCpreds_df[,2], 
+                                               upper = SALIX_Height_OTCpreds_df[,3], year = seq(1:23))
 
 
 ###Plot change in height
 ggplot() +
-  geom_point(data= Height_AUD, 
+  geom_point(data= Height_SAL, 
              aes(x = YEAR, y = mean_height, color=TRTMT),
              alpha = 0.8, size = 2)+
-  scale_color_manual(values = c("#1B9E77", "#7570B3", "#E6AB02"), labels = c("CTL","OTC", "GRA")) +
-  scale_fill_manual(values = c("#1B9E77", "#7570B3", "#E6AB02"),  labels =c("CTL","OTC", "GRA")) +
+  scale_color_manual(values = c("#1B9E77", "#7570B3", "#E6AB02"), labels = c("control","warming")) +
+  scale_fill_manual(values = c("#1B9E77", "#7570B3", "#E6AB02"),  labels =c("control","warming")) +
   scale_x_continuous(breaks = c(1997, 2000, 2007, 2014, 2019)) +
-  geom_ribbon(data = AUD_Height_CTLpreds_df, aes(x = year + 1996, ymin = lower, ymax = upper), fill = "#1B9E77", alpha = 0.2) +
-  geom_line(data = AUD_Height_CTLpreds_df, aes(x = year + 1996, y = mean), colour = "#1B9E77") +
-  geom_ribbon(data = AUD_Height_GRApreds_df, aes(x = year + 1996, ymin = lower, ymax = upper), fill = "#E6AB02", alpha = 0.2) +
-  geom_line(data = AUD_Height_GRApreds_df, aes(x = year + 1996, y = mean), colour = "#E6AB02") +
-  geom_ribbon(data = AUD_Height_OTCpreds_df, aes(x = year + 1996, ymin = lower, ymax = upper), fill = "#7570B3", alpha = 0.2) +
-  geom_line(data = AUD_Height_OTCpreds_df, aes(x = year + 1996, y = mean), colour = "#7570B3",  linetype="dashed") +
+  geom_ribbon(data = SALIX_Height_CTLpreds_df, aes(x = year + 1996, ymin = lower, ymax = upper), fill = "#1B9E77", alpha = 0.2) +
+  geom_line(data = SALIX_Height_CTLpreds_df, aes(x = year + 1996, y = mean), colour = "#1B9E77") +
+  geom_ribbon(data = SALIX_Height_OTCpreds_df, aes(x = year + 1996, ymin = lower, ymax = upper), fill = "#7570B3", alpha = 0.2) +
+  geom_line(data = SALIX_Height_OTCpreds_df, aes(x = year + 1996, y = mean), colour = "#7570B3",  linetype="dashed") +
   theme_bw()+
   xlab("Year")+
   ylab("Mean height (cm)")+
@@ -403,11 +401,11 @@ ggplot() +
 ggsave("Height_regression.tiff", last_plot(), dpi = 500)
 
 ####Alternative plot for change in height: BOXPLOT
-ggplot(data=Height_AUD, aes(x=factor(YEAR), y=mean_height,fill = factor(TRTMT))) + 
+ggplot(data=Height_SAL, aes(x=factor(YEAR), y=mean_height,fill = factor(TRTMT))) + 
   geom_boxplot() +
   scale_fill_brewer("Treatment", palette="Dark2")+
   xlab("Sampling year")+ 
-  ylab("Height (cm)")+
+  ylab("Height (mm)")+
   theme_bw()+
   theme(
     strip.background = element_blank(),
@@ -429,8 +427,8 @@ prior2 <- list(R = list(V = 1, nu = 0.002),
 ### Linear model for all species AUD Top and Bottom
 #CTL
 
-AUD <- coverTopBottom%>%
-  filter(SITE=="AUDKULUHEIDI")%>%
+SALIX <- coverTopBottom%>%
+  filter(SITE=="Salix")%>%
 #  mutate(cover=cover*100)%>%
   na.omit()
 
@@ -442,35 +440,29 @@ AUD_plot_all_CTL <- MCMCglmm(cover ~ I(YEAR-1996) * SPP,
 summary(AUD_plot_all_CTL)
 
 #OTC
-AUD_plot_all_OTC <- MCMCglmm(cover ~ I(YEAR-1996) * SPP, 
-                             random = ~ YEAR+PLOT, data = AUD[AUD$TRTMT == "OTC",], 
+SAL_plot_all_OTC <- MCMCglmm(cover ~ I(YEAR-1996) * SPP, 
+                             random = ~ YEAR+PLOT, data = SALIX[SALIX$TRTMT == "warming",], 
                              family = "gaussian", pr = TRUE, nitt = 100000, 
                              burnin = 20000, prior = prior2)
 
-summary(AUD_plot_all_OTC)
-
-#GRA
-AUD_plot_all_GRA <- MCMCglmm(cover ~ I(YEAR-1996) * SPP, 
-                             random = ~ YEAR+PLOT, data = AUD[AUD$TRTMT == "GRA",], 
-                             family = "gaussian", pr = TRUE, nitt = 100000, 
-                             burnin = 20000, prior = prior2)
-summary(AUD_plot_all_GRA)
+summary(SAL_plot_all_OTC)
 
 #Linear model for main species to check for difference in treatment
+#IS THIS THE SPOT I WANT TO GROUP SPECIES BY FAMILY??
 
-AUD_plot_BETNAN <- MCMCglmm(cover ~ I(YEAR-1996)+TRTMT-1, 
+SAL_plot_CAR <- MCMCglmm(cover ~ I(YEAR-2022)+TRTMT-1, 
                             random = ~ YEAR + PLOT,
-                            data = AUD[AUD$SPP == "BETNAN",], 
+                            data = SALIX[SALIX$SPP == "car",], 
                             family = "gaussian", pr = TRUE, nitt = 100000, 
                             burnin = 20000, prior = prior2)
-summary(AUD_plot_BETNAN)
+summary(SAL_plot_CAR)
 
-AUD_plot_RACLAN <- MCMCglmm(cover ~ I(YEAR-1996)+TRTMT-1, 
+SAL_plot_JUN <- MCMCglmm(cover ~ I(YEAR-2022)+TRTMT-1, 
                             random = ~ YEAR + PLOT,
-                            data = AUD[AUD$SPP == "RACLAN",], 
+                            data = SALIX[SALIX$SPP == "jun",], 
                             family = "gaussian", pr = TRUE, nitt = 100000, 
                             burnin = 20000, prior = prior2)
-summary(AUD_plot_RACLAN)
+summary(SAL_plot_JUN)
 
 AUD_plot_CETISL <- MCMCglmm(cover ~ I(YEAR-1996)+TRTMT-1, 
                             random = ~ YEAR + PLOT,
