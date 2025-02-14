@@ -5,7 +5,7 @@ library(ggplot2)
 library(plyr)
 library(dplyr)
 library(tidyr)
-#library(forcats)
+library(forcats)
 library(gridExtra)
 library(MCMCglmm)
 library(readxl)
@@ -81,63 +81,53 @@ coverUnder <- allDataUnder%>%
 #####################NMDS changes in species cover
 #Make wide format
 
-SALIX<- coverTopBottom %>% 
-        filter(SITE=="Salix")%>% 
+SITES<- coverTopBottom %>% 
+        filter(SITE %in% c("Salix", "Cassiope","Meadow"))%>% 
         select(DATE,SITE,TRTMT,PLOT, SPECIES, cover)%>% 
         pivot_wider(names_from = SPECIES, values_from = cover)
 
 #Remove columns with all 0 or NA values 
-SALIX <- SALIX[, colSums(SALIX != 0, na.rm = TRUE) > 0]
+#Swap all NA for zeros
+SITES[is.na(SITES)] <- 0
 
-CASS <- coverTopBottom %>% 
-  filter(SITE=="Cassiope")%>% 
-  select(DATE,SITE,TRTMT,PLOT, SPECIES, cover)%>% 
-  pivot_wider(names_from = SPECIES, values_from = cover)
-
-CASS <- CASS[, colSums(CASS != 0, na.rm = TRUE) > 0]
-
-MEAD <- coverTopBottom %>% 
-  filter(SITE=="Meadow")%>% 
-  select(DATE,SITE,TRTMT,PLOT, SPECIES, cover)%>% 
-  pivot_wider(names_from = SPECIES, values_from = cover)
-
-MEAD <- MEAD[, colSums(MEAD != 0, na.rm = TRUE) > 0]
 
 ###NMDS
-#Do NMDS for SALIX
-year <- SALIX [,1]
-TRTMT <- SALIX [,3]
-veg<- SALIX [,5:28]
-
-#veg contains some NA values, I could drop the rows and delete all of my data or replace the NA's with 0's
-#Changed all NA values to 0's 
-veg <- veg %>% mutate_all(~replace_na(., 0))
+#Do NMDS for all sites
+year <- SITES [,1]
+SITE <- SITES[,2]
+TRTMT <- SITES [,3]
+veg<- SITES [,5:49]
 
 veg.mds <- metaMDS(veg, distance = "bray",autotransform = F,k=3,trymax=300)
 
 site.scrs <- as.data.frame(scores(veg.mds, display = "sites"))
-site.scrsSALIX <- cbind(site.scrs, year,TRTMT)
-site.scrsSALIX$site<-"Salix"
+site.scrsSITES <- cbind(site.scrs, year, SITE, TRTMT)
+site.scrsSITES <- site.scrsSITES[-28,]
+
+
+#site.scrsSITES$site<- c("Salix", "Cassiope", "Meadow") #figure generated without this
 
 #fit environmental variables with envfit
-env<- cbind(year, TRTMT)
-fit<-envfit(veg.mds, env)
+#env<- cbind(year, TRTMT)
+#fit<-envfit(veg.mds, env)
 
 en_coord_cont = as.data.frame(scores(fit, "vectors")) * ordiArrowMul(fit)
 en_coord_cat = as.data.frame(scores(fit, "factors")) * ordiArrowMul(fit)
 
-#Plot SALIX with envfit
+#Plot SITES with envfit
+
 ggplot()+ 
-  geom_point(data=site.scrsSALIX, aes(NMDS1, NMDS2, colour = as.factor(DATE), shape=factor(TRTMT)),
-             size=3)+
-  geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
-               data = en_coord_cont, size =1, alpha = 0.5, colour = "grey30") +
-  geom_point(data = en_coord_cat, aes(x = NMDS1, y = NMDS2), 
-             shape = "diamond", size = 4, alpha = 0.6, colour = "navy") +
-  geom_text(data = en_coord_cat, aes(x = NMDS1, y = NMDS2+0.04), 
-            label = row.names(en_coord_cat), colour = "navy", fontface = "bold") + 
-  geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30", 
-            fontface = "bold", label = row.names(en_coord_cont))
+  geom_point(data=site.scrsSITES, aes(NMDS1, NMDS2, colour = as.factor(SITE), shape=factor(TRTMT)),
+             size=3) 
+#+
+  #geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+               #data = en_coord_cont, size =1, alpha = 0.5, colour = "grey30") +
+  #geom_point(data = en_coord_cat, aes(x = NMDS1, y = NMDS2), 
+             #shape = "diamond", size = 4, alpha = 0.6, colour = "navy") +
+  #geom_text(data = en_coord_cat, aes(x = NMDS1, y = NMDS2+0.04), 
+            #label = row.names(en_coord_cat), colour = "navy", fontface = "bold") + 
+  #geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30", 
+            #fontface = "bold", label = row.names(en_coord_cont))
 
 #Run permanova
 veg.dist <- vegdist(veg, method="bray")
