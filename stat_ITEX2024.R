@@ -2,8 +2,7 @@ setwd("~/Desktop/Garibaldi_Analysis-1")
 
 library(ggplot2)
 #library(ggvegan)
-library(plyr)
-library(dplyr)
+#library(plyr)
 library(tidyr)
 library(forcats)
 library(gridExtra)
@@ -135,97 +134,29 @@ adonis2(veg ~ TRTMT*DATE, data = env, permutations = 999, method="bray", by = NU
 
 data(dune.env)
 
-
-#NMDS for CASS
-
-year <- CASS [,1]
-TRTMT <- CASS[,3]
-veg<- CASS[,5:60]
-
-veg.mds <- metaMDS(veg, distance = "bray",autotransform = F,k=3,trymax=300)
-
-env<- cbind(year, TRTMT)
-fit<-envfit(veg.mds, env)
-
-en_coord_cont = as.data.frame(scores(fit, "vectors")) * ordiArrowMul(fit)
-en_coord_cat = as.data.frame(scores(fit, "factors")) * ordiArrowMul(fit)
-
-site.scrs <- as.data.frame(scores(veg.mds, display = "sites"))
-site.scrsCASS <- cbind(site.scrs, year,TRTMT)
-site.scrsCASS$site<-"Cassiope"
-
-#NMDS for MEAD
-
-year <- MEAD [,1]
-TRTMT <- MEAD[,3]
-veg<- MEAD[,5:60]
-
-veg.mds <- metaMDS(veg, distance = "bray",autotransform = F,k=3,trymax=300)
-
-env<- cbind(year, TRTMT)
-fit<-envfit(veg.mds, env)
-
-en_coord_cont = as.data.frame(scores(fit, "vectors")) * ordiArrowMul(fit)
-en_coord_cat = as.data.frame(scores(fit, "factors")) * ordiArrowMul(fit)
-
-site.scrs <- as.data.frame(scores(veg.mds, display = "sites"))
-site.scrsMEAD <- cbind(site.scrs, year,TRTMT)
-site.scrsMEAD$site<-"Meadow"
-
-
-ggplot()+ 
-  geom_point(data=site.scrsAUD, aes(NMDS1, NMDS2, colour = as.factor(YEAR), shape=factor(TRTMT)),
-             size=3)+
-geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
-             data = en_coord_cont, size =1, alpha = 0.5, colour = "grey30") +
-  geom_point(data = en_coord_cat, aes(x = NMDS1, y = NMDS2), 
-             shape = "diamond", size = 4, alpha = 0.6, colour = "navy") +
-  geom_text(data = en_coord_cat, aes(x = NMDS1, y = NMDS2+0.04), 
-            label = row.names(en_coord_cat), colour = "navy", fontface = "bold") + 
-  geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30", 
-            fontface = "bold", label = row.names(en_coord_cont))
-
-
-
-site.scrsTotal<- rbind(site.scrsSALIX, site.scrsCASS, site.scrsMEAD)%>% 
-                  mutate(TRTMT = factor(TRTMT, levels = c("control", "warming"))) 
-
-
-ggplot()+ 
-  geom_point(data=site.scrsTotal, aes(NMDS1, NMDS2, colour = as.factor(YEAR), shape=factor(TRTMT)),
-             size=3)+
-  facet_grid(rows = vars(site) ,scales="free_y")+
-  scale_colour_brewer("", palette="Dark2")+
-  theme_classic()+ 
-  theme(panel.background = element_rect(fill = NA, colour = "black", size = 1, linetype = "solid"))+
-  labs(colour = factor("Year"), shape="Treatment",title ="" )
-
-ggsave("NMDS_topBottom.tiff", last_plot(), dpi = 500)
 ##############################################
-###Changes in GFBROAD
+###Changes in GF_BROAD ??????
 library(RColorBrewer)
 library(forcats)
 
-GFBROAD<- allDataTopBottom%>% 
-  select(SITE, TRTMT, PLOT, YEAR, GFBROAD, HitOrder)%>% 
-  filter(!GFBROAD=="ABIOTIC",
-    #     !GFBROAD=="SOIL",
-         !GFBROAD=="FUNGI")%>% 
-  mutate(GFBROAD=as.factor(GFBROAD),
-         YEAR=as.factor(YEAR))%>% 
-  group_by(YEAR,SITE, TRTMT,PLOT)%>% 
-  count(GFBROAD, .drop = FALSE)%>%
-  mutate(cover=n/sum(n)*100)%>%
+FG_BROAD<- allDataTopBottom%>% 
+  select(SITE, TRTMT, PLOT, DATE, FG_BROAD, HitOrder)%>% 
+  filter(!is.na(FG_BROAD),
+         !FG_BROAD=="FUNGI")%>% 
+  mutate(FG_BROAD=as.factor(FG_BROAD),
+         DATE=as.factor(DATE))%>% 
+  group_by(DATE,SITE, TRTMT,PLOT)%>% 
+  tally(name = "cover")%>%
+  mutate(cover = cover/100)%>%
   ungroup()%>%
-  group_by(YEAR,SITE, TRTMT,GFBROAD)%>%
+  group_by(DATE,SITE, TRTMT,FG_BROAD)%>%
   summarise(coverSITE=mean(cover))%>%
-mutate(TRTMT = factor(TRTMT, levels = c("control", "warming")))%>%
-  mutate(YEAR = factor(YEAR, levels = c("2022", "2024")))%>%
-  mutate(GFBROAD = factor(GFBROAD, levels = c("FORBSV", "GRAMINOID", "ESHRUB", 
+  mutate(TRTMT = factor(TRTMT, levels = c("control", "warming")))%>%
+  mutate(DATE = factor(DATE, levels = c("2022", "2024")))%>%
+  mutate(FG_BROAD = factor(FG_BROAD, levels = c("FORBSV", "GRAMINOID", "ESHRUB", 
                                             "DSHRUB", "MOSS", "LICHEN", 
-                                            "LITTER", "SOIL")))%>%
-  filter_at(vars(GFBROAD), all_vars(!is.na(.)))
-
+                                            "LITTER", "SOIL", "SLVASC")))%>%
+  filter_at(vars(FG_BROAD), all_vars(!is.na(.)))
 
 ggsave("Cover_topBottom.tiff", last_plot(), dpi = 300)
 
@@ -283,33 +214,49 @@ ggplot(data=GFBROADtop,aes(x=YEAR, y=coverSITE, fill=GFBROAD)) +
 
 dataset <-read_xlsx("merged_2022_2024.xlsx")
 
-Height_SAL<-dataset%>%
-              filter(SITE=="SALIX")%>%
-              filter(Hit==1)%>%
-              select(YEAR,TRTMT, PLOT, CanopyHeight.mm.)%>%
-              mutate(CanopyHeight.mm.=as.numeric(CanopyHeight.mm.))%>%
-              na.omit()%>%
-              group_by(YEAR,TRTMT, PLOT)%>%
-              summarise(mean_height=mean(CanopyHeight.mm.))%>%
-              mutate(TRTMT = factor(TRTMT, levels = c("control", "warming")))
+Height_SAL <- dataset %>%
+  filter(SITE %in% c("Salix")) %>%
+  filter(HitOrder %in% c("Top")) %>%
+  select(DATE, SITE, TRTMT, PLOT, SPECIES, HitOrder, CanopyHeight.mm.)
+#Change PLOT to factor for randomness in MCMC
+Height_SAL$PLOT <- as.factor(Height_SAL$PLOT)
+Height_SAL$TRTMT <- as.factor(Height_SAL$TRTMT)
 
-prior2 <- list(R = list(V = 1, nu = 0.002), 
-               G = list(G1 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000), 
-                        G2 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000)))
+Height_SAL <- Height_SAL %>%
+  group_by(DATE, TRTMT, PLOT) %>%
+  mutate(mean_height = mean(CanopyHeight.mm., na.rm = TRUE)) %>%
+  ungroup()
 
+#Convert to data frame before passing to MCMC 
+Height_SAL_df <- as.data.frame(Height_SAL)
 
-SALIX_Height_CTL <- MCMCglmm(mean_height ~ I(YEAR-2022), 
-                             random = ~ YEAR+PLOT, data = Height_SAL[Height_SAL$TRTMT == "control",], 
-                             family = "gaussian", pr = TRUE, nitt = 100000, 
-                             burnin = 20000, prior = prior2)
+#prior2 <- list(R = list(V = 1, nu = 0.002), 
+               #G = list(G1 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000), 
+                        #G2 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000)))
 
-SALIX_Height_OTC <- MCMCglmm(mean_height ~ I(YEAR-2022), 
-                           random = ~ YEAR+PLOT, data = Height_SAL[Height_SAL$TRTMT == "warming",], 
+#Using a stronger prior
+prior2 <- list(
+  R = list(V = 1, nu = 0.002),
+  G = list(G1 = list(V = 1, nu = 2, alpha.mu = 0, alpha.v = 10000)),
+            G2 = list(V = 1, nu = 2, alpha.mu = 0, alpha.v = 10000))
+
+#Breaking here, error in random --> prior list should contain elements R,G and/or B or S only
+SALIX_Height_OTC <- MCMCglmm(mean_height ~ I(DATE - 2022), 
+                             random = ~ DATE + PLOT, 
+                             data = Height_SAL_df[Height_SAL_df$TRTMT == "warming",], 
+                             pr = TRUE, 
+                             nitt = 100000, 
+                             burnin = 20000, 
+                             prior = prior2)
+
+SALIX_Height_OTC <- MCMCglmm(mean_height ~ I(DATE-2022), 
+                           random = ~ DATE+PLOT, data = Height_SAL[Height_SAL$TRTMT == "warming",], 
                            family = "gaussian", pr = TRUE, nitt = 100000, 
                            burnin = 20000, prior = prior2)
 
+
 #Test difference between treatment
-canopy_m <- MCMCglmm(mean_height ~ I(YEAR-2022)+TRTMT-1, random = ~ YEAR + PLOT,
+canopy_m <- MCMCglmm(mean_height ~ I(DATE-2022)+TRTMT-1, random = ~ DATE + PLOT,
                             data = Height_SAL, 
                             family = "gaussian", pr = TRUE, nitt = 100000, 
                             burnin = 20000, prior = prior2)
