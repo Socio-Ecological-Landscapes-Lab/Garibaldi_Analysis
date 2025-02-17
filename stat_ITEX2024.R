@@ -135,129 +135,141 @@ adonis2(veg ~ TRTMT*DATE, data = env, permutations = 999, method="bray", by = NU
 data(dune.env)
 
 ##############################################
-###Changes in GF_BROAD ??????
-library(RColorBrewer)
-library(forcats)
+###Changes in GF_BROAD 
+# Choosing to exclude this section from analysis for now 
+#library(RColorBrewer)
+#library(forcats)
 
-FG_BROAD<- allDataTopBottom%>% 
-  select(SITE, TRTMT, PLOT, DATE, FG_BROAD, HitOrder)%>% 
-  filter(!is.na(FG_BROAD),
-         !FG_BROAD=="FUNGI")%>% 
-  mutate(FG_BROAD=as.factor(FG_BROAD),
-         DATE=as.factor(DATE))%>% 
-  group_by(DATE,SITE, TRTMT,PLOT)%>% 
-  tally(name = "cover")%>%
-  mutate(cover = cover/100)%>%
-  ungroup()%>%
-  group_by(DATE,SITE, TRTMT,FG_BROAD)%>%
-  summarise(coverSITE=mean(cover))%>%
-  mutate(TRTMT = factor(TRTMT, levels = c("control", "warming")))%>%
-  mutate(DATE = factor(DATE, levels = c("2022", "2024")))%>%
-  mutate(FG_BROAD = factor(FG_BROAD, levels = c("FORBSV", "GRAMINOID", "ESHRUB", 
+#FG_BROAD<- allDataTopBottom%>% 
+  #select(SITE, TRTMT, PLOT, DATE, FG_BROAD, HitOrder)%>% 
+  #filter(!is.na(FG_BROAD),
+         #!FG_BROAD=="FUNGI")%>% 
+  #mutate(FG_BROAD=as.factor(FG_BROAD),
+         #DATE=as.factor(DATE))%>% 
+  #group_by(DATE,SITE, TRTMT,PLOT)%>% 
+  #tally(name = "cover")%>%
+  #mutate(cover = cover/100)%>%
+  #ungroup()%>%
+  #group_by(DATE,SITE, TRTMT,FG_BROAD)%>%
+  #summarise(coverSITE=mean(cover))%>%
+  #mutate(TRTMT = factor(TRTMT, levels = c("control", "warming")))%>%
+  #mutate(DATE = factor(DATE, levels = c("2022", "2024")))%>%
+  #mutate(FG_BROAD = factor(FG_BROAD, levels = c("FORBSV", "GRAMINOID", "ESHRUB", 
                                             "DSHRUB", "MOSS", "LICHEN", 
                                             "LITTER", "SOIL", "SLVASC")))%>%
-  filter_at(vars(FG_BROAD), all_vars(!is.na(.)))
+  #filter_at(vars(FG_BROAD), all_vars(!is.na(.)))
 
-ggsave("Cover_topBottom.tiff", last_plot(), dpi = 300)
-
-GFBROADtop<- allDataCanopy%>% 
-  select(SITE, TRTMT, PLOT, YEAR, GFBROAD, HitOrder)%>% 
-  filter(!GFBROAD=="ABIOTIC",
+#ggsave("Cover_topBottom.tiff", last_plot(), dpi = 300)
+ 
+#GFBROADtop<- allDataCanopy%>% 
+  #select(SITE, TRTMT, PLOT, YEAR, GFBROAD, HitOrder)%>% 
+  #filter(!GFBROAD=="ABIOTIC",
          #     !GFBROAD=="SOIL",
-         !GFBROAD=="FUNGI")%>% 
-  mutate(GFBROAD=as.factor(GFBROAD),
-         YEAR=as.factor(YEAR))%>% 
-  group_by(YEAR,SITE, TRTMT,PLOT)%>% 
-  count(GFBROAD, .drop = FALSE)%>%
-  mutate(cover=n/sum(n)*100)%>%
-  ungroup()%>%
-  group_by(YEAR,SITE, TRTMT,GFBROAD)%>%
-  summarise(coverSITE=mean(cover))%>%
-  mutate(TRTMT = factor(TRTMT, levels = c("control", "warming")))%>%
-  mutate(YEAR = factor(YEAR, levels = c("2022", "2024")))%>%
-  mutate(GFBROAD = factor(GFBROAD, levels = c("FORBSV", "GRAMINOID", "ESHRUB", 
-                                              "DSHRUB", "MOSS", "LICHEN", 
-                                              "LITTER", "SOIL")))
-ggsave("Cover_topBottom.tiff", last_plot(), dpi = 500)
-
+         #!GFBROAD=="FUNGI")%>% 
+  #mutate(GFBROAD=as.factor(GFBROAD),
+         #YEAR=as.factor(YEAR))%>% 
+  #group_by(YEAR,SITE, TRTMT,PLOT)%>% 
+  #count(GFBROAD, .drop = FALSE)%>%
+  #mutate(cover=n/sum(n)*100)%>%
+  #ungroup()%>%
+  #group_by(YEAR,SITE, TRTMT,GFBROAD)%>%
+  #summarise(coverSITE=mean(cover))%>%
+  #mutate(TRTMT = factor(TRTMT, levels = c("control", "warming")))%>%
+  #mutate(YEAR = factor(YEAR, levels = c("2022", "2024")))%>%
+  #mutate(GFBROAD = factor(GFBROAD, levels = c("FORBSV", "GRAMINOID", "ESHRUB", 
+                                              #"DSHRUB", "MOSS", "LICHEN", 
+                                              #"LITTER", "SOIL")))
+#ggsave("Cover_topBottom.tiff", last_plot(), dpi = 500)
 
 #Plot Change in GFBROAD
-ggplot(data=GFBROAD,aes(x=YEAR, y=coverSITE, fill=GFBROAD)) + 
-  geom_bar(position="stack",stat="identity") +
-  facet_grid(TRTMT~SITE ,scales="free_y")+
-  scale_fill_brewer("", palette="Dark2")+
-  xlab("Sampling year")+ 
-  ylab("Cover (%)")+
-  theme_bw()+ 
-  theme(
-    strip.background = element_blank(),
-    axis.text.x=element_text(angle = 45, vjust = 0.5),
-    axis.title.x=element_blank(),
-    axis.ticks.x=element_blank())
+#ggplot(data=GFBROAD,aes(x=YEAR, y=coverSITE, fill=GFBROAD)) + 
+  #geom_bar(position="stack",stat="identity") +
+  #facet_grid(TRTMT~SITE ,scales="free_y")+
+  #scale_fill_brewer("", palette="Dark2")+
+  #xlab("Sampling year")+ 
+  #ylab("Cover (%)")+
+  #theme_bw()+ 
+  #theme(
+    #strip.background = element_blank(),
+    #axis.text.x=element_text(angle = 45, vjust = 0.5),
+    #axis.title.x=element_blank(),
+    #axis.ticks.x=element_blank())
 
-ggplot(data=GFBROADtop,aes(x=YEAR, y=coverSITE, fill=GFBROAD)) + 
-  geom_bar(position="stack",stat="identity") +
-  facet_grid(TRTMT~SITE ,scales="free_y")+
-  scale_fill_brewer("", palette="Dark2")+
-  xlab("Sampling year")+ 
-  ylab("Cover (%)")+
-  theme_bw()+ 
-  theme(
-    strip.background = element_blank(),
-    axis.text.x=element_text(angle = 45, vjust = 0.5),
-    axis.title.x=element_blank(),
-    axis.ticks.x=element_blank())
+#ggplot(data=GFBROADtop,aes(x=YEAR, y=coverSITE, fill=GFBROAD)) + 
+  #geom_bar(position="stack",stat="identity") +
+  #facet_grid(TRTMT~SITE ,scales="free_y")+
+  #scale_fill_brewer("", palette="Dark2")+
+  #xlab("Sampling year")+ 
+  #ylab("Cover (%)")+
+  #theme_bw()+ 
+  #theme(
+    #strip.background = element_blank(),
+    #axis.text.x=element_text(angle = 45, vjust = 0.5),
+    #axis.title.x=element_blank(),
+    #axis.ticks.x=element_blank())
 
 
 ###########################################
 ####CHANGE IN HEIGHT
+##Errors due to NA values in CanopyHeight.mm.? 
 
 dataset <-read_xlsx("merged_2022_2024.xlsx")
 
-Height_SAL <- dataset %>%
-  filter(SITE %in% c("Salix")) %>%
+Height_ALL <- dataset %>%
+  filter(SITE %in% c("Salix", "Meadow", "Cassiope")) %>%
   filter(HitOrder %in% c("Top")) %>%
   select(DATE, SITE, TRTMT, PLOT, SPECIES, HitOrder, CanopyHeight.mm.)
-#Change PLOT to factor for randomness in MCMC
-Height_SAL$PLOT <- as.factor(Height_SAL$PLOT)
-Height_SAL$TRTMT <- as.factor(Height_SAL$TRTMT)
 
-Height_SAL <- Height_SAL %>%
+#Change PLOT to factor for randomness in MCMC
+Height_ALL$PLOT <- as.factor(Height_ALL$PLOT)
+Height_ALL$TRTMT <- as.factor(Height_ALL$TRTMT)
+
+Height_ALL <- Height_ALL %>%
   group_by(DATE, TRTMT, PLOT) %>%
+  #Cascading error from the line below, mutate calculates one mean for all the data
+  #whereas summarize using .groups = 'drop' outputs only one mean and drops all columns 
   mutate(mean_height = mean(CanopyHeight.mm., na.rm = TRUE)) %>%
   ungroup()
 
 #Convert to data frame before passing to MCMC 
-Height_SAL_df <- as.data.frame(Height_SAL)
+Height_ALL_df <- as.data.frame(Height_ALL)
 
 #prior2 <- list(R = list(V = 1, nu = 0.002), 
                #G = list(G1 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000), 
                         #G2 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000)))
 
-#Using a stronger prior
+#Using a stronger prior without random variables 
 prior2 <- list(
-  R = list(V = 1, nu = 0.002),
-  G = list(G1 = list(V = 1, nu = 2, alpha.mu = 0, alpha.v = 10000)),
-            G2 = list(V = 1, nu = 2, alpha.mu = 0, alpha.v = 10000))
+  R = list(V = 1, nu = 0.002)) #,
+  #G = list(
+    #G1 = list(V = 1, nu = 2, alpha.mu = 0, alpha.v = 10000),
+            #G2 = list(V = 1, nu = 2, alpha.mu = 0, alpha.v = 10000)))
 
-#Breaking here, error in random --> prior list should contain elements R,G and/or B or S only
-SALIX_Height_OTC <- MCMCglmm(mean_height ~ I(DATE - 2022), 
-                             random = ~ DATE + PLOT, 
-                             data = Height_SAL_df[Height_SAL_df$TRTMT == "warming",], 
+
+#Warning message, "Unknown or unitialized column: 'family'" --> ran with only one or none random variables
+ALL_Height_OTC <- MCMCglmm(mean_height ~ I(DATE - 2022), 
+                             #random = ~ DATE + PLOT, 
+                             data = Height_ALL_df[Height_ALL_df$TRTMT == "warming",], 
+                             family="gaussian",
                              pr = TRUE, 
                              nitt = 100000, 
                              burnin = 20000, 
                              prior = prior2)
 
-SALIX_Height_OTC <- MCMCglmm(mean_height ~ I(DATE-2022), 
-                           random = ~ DATE+PLOT, data = Height_SAL[Height_SAL$TRTMT == "warming",], 
-                           family = "gaussian", pr = TRUE, nitt = 100000, 
-                           burnin = 20000, prior = prior2)
+ALL_Height_OTC <- MCMCglmm(mean_height ~ I(DATE-2022), 
+                           #random = ~ DATE+PLOT, 
+                           data = Height_ALL_df[Height_ALL_df$TRTMT == "warming",], 
+                           family ="gaussian", 
+                           pr = TRUE, 
+                           nitt = 100000, 
+                           burnin = 20000,
+                           prior = prior2)
 
 
 #Test difference between treatment
-canopy_m <- MCMCglmm(mean_height ~ I(DATE-2022)+TRTMT-1, random = ~ DATE + PLOT,
-                            data = Height_SAL, 
+canopy_m <- MCMCglmm(mean_height ~ I(DATE-2022)+TRTMT-1, 
+                            #random = ~ DATE + PLOT,
+                            data = Height_ALL_df, 
                             family = "gaussian", pr = TRUE, nitt = 100000, 
                             burnin = 20000, prior = prior2)
 
@@ -267,62 +279,62 @@ canopy_m <- MCMCglmm(mean_height ~ I(DATE-2022)+TRTMT-1, random = ~ DATE + PLOT,
 
 #CTL
 nyears <- 23
-niter <- length(SALIX_Height_CTL$Sol[,"(Intercept)"])
+niter <- length(ALL_Height_CTL$Sol[,"(Intercept)"])
 
-SALIX_Height_CTLpreds <- array(NA, dim = c(niter,nyears))
+ALL_Height_CTLpreds <- array(NA, dim = c(niter,nyears))
 
 for (i in 1:niter){
   for (j in 1:nyears){
-    SALIX_Height_CTLpreds[i,j] <- SALIX_Height_CTL$Sol[i,"(Intercept)"] + SALIX_Height_CTL$Sol[i,"I(YEAR - 2022)"]*j
+   ALL_Height_CTLpreds[i,j] <- ALL_Height_CTL$Sol[i,"(Intercept)"] + ALL_Height_CTL$Sol[i,"I(DATE - 2022)"]*j
   }
 }
 
 
-SALIX_Height_CTLpreds_df <- array(NA, dim = c(nyears,3))
+ALL_Height_CTLpreds_df <- array(NA, dim = c(nyears,3))
 
 for (i in 1:nyears){
-  SALIX_Height_CTLpreds_df [i,] <- quantile(SALIX_Height_CTLpreds[,i], c(0.025, 0.5, 0.975))
+  ALL_Height_CTLpreds_df [i,] <- quantile(ALL_Height_CTLpreds[,i], c(0.025, 0.5, 0.975))
 }
 
-SALIX_Height_CTLpreds_df <- cbind.data.frame(lower = SALIX_Height_CTLpreds_df[,1], 
-                                               mean = SALIX_Height_CTLpreds_df[,2], 
-                                               upper = SALIX_Height_CTLpreds_df[,3], year = seq(1:23))
+ALL_Height_CTLpreds_df <- cbind.data.frame(lower = ALL_Height_CTLpreds_df[,1], 
+                                               mean = ALL_Height_CTLpreds_df[,2], 
+                                               upper = ALL_Height_CTLpreds_df[,3], year = seq(1:23))
 #OTC
 nyears <- 23
-niter <- length(SALIX_Height_OTC$Sol[,"(Intercept)"])
+niter <- length(ALL_Height_OTC$Sol[,"(Intercept)"])
 
-SALIX_Height_OTCpreds <- array(NA, dim = c(niter,nyears))
+ALL_Height_OTCpreds <- array(NA, dim = c(niter,nyears))
 
 for (i in 1:niter){
   for (j in 1:nyears){
-    SALIX_Height_OTCpreds[i,j] <- SALIX_Height_OTC$Sol[i,"(Intercept)"] + SALIX_Height_OTC$Sol[i,"I(YEAR - 2022)"]*j
+    ALL_Height_OTCpreds[i,j] <- ALL_Height_OTC$Sol[i,"(Intercept)"] + ALL_Height_OTC$Sol[i,"I(DATE - 2022)"]*j
   }
 }
 
 
-SALIX_Height_OTCpreds_df <- array(NA, dim = c(nyears,3))
+ALL_Height_OTCpreds_df <- array(NA, dim = c(nyears,3))
 
 for (i in 1:nyears){
-  SALIX_Height_OTCpreds_df [i,] <- quantile(SALIX_Height_OTCpreds[,i], c(0.025, 0.5, 0.975))
+  ALL_Height_OTCpreds_df [i,] <- quantile(ALL_Height_OTCpreds[,i], c(0.025, 0.5, 0.975))
 }
 
-SALIX_Height_OTCpreds_df <- cbind.data.frame(lower = SALIX_Height_OTCpreds_df[,1], 
-                                               mean = SALIX_Height_OTCpreds_df[,2], 
-                                               upper = SALIX_Height_OTCpreds_df[,3], year = seq(1:23))
+ALL_Height_OTCpreds_df <- cbind.data.frame(lower = ALL_Height_OTCpreds_df[,1], 
+                                               mean = ALL_Height_OTCpreds_df[,2], 
+                                               upper = ALL_Height_OTCpreds_df[,3], year = seq(1:23))
 
 
 ###Plot change in height
 ggplot() +
-  geom_point(data= Height_SAL, 
-             aes(x = YEAR, y = mean_height, color=TRTMT),
+  geom_point(data= Height_ALL, 
+             aes(x = DATE, y = mean_height, color=TRTMT),
              alpha = 0.8, size = 2)+
   scale_color_manual(values = c("#1B9E77", "#7570B3", "#E6AB02"), labels = c("control","warming")) +
   scale_fill_manual(values = c("#1B9E77", "#7570B3", "#E6AB02"),  labels =c("control","warming")) +
-  scale_x_continuous(breaks = c(1997, 2000, 2007, 2014, 2019)) +
-  geom_ribbon(data = SALIX_Height_CTLpreds_df, aes(x = year + 1996, ymin = lower, ymax = upper), fill = "#1B9E77", alpha = 0.2) +
-  geom_line(data = SALIX_Height_CTLpreds_df, aes(x = year + 1996, y = mean), colour = "#1B9E77") +
-  geom_ribbon(data = SALIX_Height_OTCpreds_df, aes(x = year + 1996, ymin = lower, ymax = upper), fill = "#7570B3", alpha = 0.2) +
-  geom_line(data = SALIX_Height_OTCpreds_df, aes(x = year + 1996, y = mean), colour = "#7570B3",  linetype="dashed") +
+  scale_x_continuous(breaks = c(2022, 2024)) +
+  geom_ribbon(data = ALL_Height_CTLpreds_df, aes(x = year + 2022, ymin = lower, ymax = upper), fill = "#1B9E77", alpha = 0.2) +
+  geom_line(data = ALL_Height_CTLpreds_df, aes(x = year + 2022, y = mean), colour = "#1B9E77") +
+  geom_ribbon(data = ALL_Height_OTCpreds_df, aes(x = year + 2022, ymin = lower, ymax = upper), fill = "#7570B3", alpha = 0.2) +
+  geom_line(data = ALL_Height_OTCpreds_df, aes(x = year + 2022, y = mean), colour = "#7570B3",  linetype="dashed") +
   theme_bw()+
   xlab("Year")+
   ylab("Mean height (cm)")+
@@ -338,7 +350,7 @@ ggplot() +
 ggsave("Height_regression.tiff", last_plot(), dpi = 500)
 
 ####Alternative plot for change in height: BOXPLOT
-ggplot(data=Height_SAL, aes(x=factor(YEAR), y=mean_height,fill = factor(TRTMT))) + 
+ggplot(data=Height_ALL, aes(x=factor(DATE), y=mean_height,fill = factor(TRTMT))) + 
   geom_boxplot() +
   scale_fill_brewer("Treatment", palette="Dark2")+
   xlab("Sampling year")+ 
@@ -356,12 +368,14 @@ ggsave("Height_boxplot.tiff", last_plot(), dpi = 300)
 ################################################
 #Species specific changes
 ###Get cover data from line 34-73
+## Feb 17th stopped here
 
 prior2 <- list(R = list(V = 1, nu = 0.002), 
                G = list(G1 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000), 
                         G2 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000)))
 
 ### Linear model for all species AUD Top and Bottom
+
 #CTL
 
 SALIX <- coverTopBottom%>%
@@ -370,8 +384,9 @@ SALIX <- coverTopBottom%>%
   na.omit()
 
 
-AUD_plot_all_CTL <- MCMCglmm(cover ~ I(YEAR-1996) * SPP, 
-                             random = ~ YEAR+PLOT, data = AUD[AUD$TRTMT == "CTL",], 
+AUD_plot_all_CTL <- MCMCglmm(cover ~ I(DATE-2022) * SPECIES, 
+                             random = ~ YEAR+PLOT, 
+                             data = AUD[AUD$TRTMT == "CTL",], 
                              family = "gaussian", pr = TRUE, nitt = 100000, 
                              burnin = 20000, prior = prior2)
 summary(AUD_plot_all_CTL)
@@ -385,7 +400,6 @@ SAL_plot_all_OTC <- MCMCglmm(cover ~ I(YEAR-1996) * SPP,
 summary(SAL_plot_all_OTC)
 
 #Linear model for main species to check for difference in treatment
-#IS THIS THE SPOT I WANT TO GROUP SPECIES BY FAMILY??
 
 SAL_plot_CAR <- MCMCglmm(cover ~ I(YEAR-2022)+TRTMT-1, 
                             random = ~ YEAR + PLOT,
