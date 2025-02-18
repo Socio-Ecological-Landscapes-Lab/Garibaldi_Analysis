@@ -12,26 +12,26 @@ library(vegan)
 library(cowplot)
 
 ##Climate data
-clim<-read.table("./Raw data/climate_Iceland.txt", h=T, row.names= NULL)%>% 
-          filter(month ==7)%>% 
-          mutate(type=case_when(type=="temperature"~"July temperature (°C)",
-                                type=="precipitation"~"July precipitation (cm)"))%>% 
-          mutate(site=case_when(site=="Thingsvellir"~"Thingvellir",
-                       TRUE~site))
+#clim<-read.table("./Raw data/climate_Iceland.txt", h=T, row.names= NULL)%>% 
+          #filter(month ==7)%>% 
+          #mutate(type=case_when(type=="temperature"~"July temperature (°C)",
+                                #type=="precipitation"~"July precipitation (cm)"))%>% 
+          #mutate(site=case_when(site=="Thingsvellir"~"Thingvellir",
+                       #TRUE~site))
 
 
-clim_plot<-ggplot(data=clim, aes(x=year, y=value, col = site)) +
-          geom_line() +
-          ylab("") +
-          xlab("Year")+
-          labs(linetype="Sites",col="Sites")+
-          scale_colour_brewer("", palette="Dark2")+
-          facet_wrap(scale='free_y',~ type, ncol = 2)+
-          theme_bw()+
-          theme(strip.background = element_rect(fill = 'white'))
+#clim_plot<-ggplot(data=clim, aes(x=year, y=value, col = site)) +
+          #geom_line() +
+          #ylab("") +
+          #xlab("Year")+
+          #labs(linetype="Sites",col="Sites")+
+          #scale_colour_brewer("", palette="Dark2")+
+          #facet_wrap(scale='free_y',~ type, ncol = 2)+
+          #theme_bw()+
+          #theme(strip.background = element_rect(fill = 'white'))
 
 
-ggsave("clim_plot.tiff", clim_plot, dpi = 300)
+#ggsave("clim_plot.tiff", clim_plot, dpi = 300)
 
 ##################################################
 
@@ -76,6 +76,45 @@ coverUnder <- allDataUnder%>%
   tally(name = "cover")%>%
   mutate(cover = cover/100)%>%
   ungroup()
+
+##Relative cover percentage and change in cover per species 
+percent_cover_summary <- coverCanopy %>%
+  dplyr::group_by(DATE, SPECIES) %>%
+  dplyr::summarize(TotalPercentCover = sum(cover, na.rm = TRUE))
+
+# View the summary
+print(percent_cover_summary)
+
+#Use summary to identify which species appear in one year but not in the other
+species_2022 <- c("antalp", "caraqu", "caraur", "carnig", "carspp", "casmer", "casspp", "equarv", "equvar", 
+                  "galhum", "junarc", "jundru", "junmer", "kalmic", "litter", "lupspp", "moss", "other", 
+                  "phygla", "pinvul", "salbar", "salgla", "triglu")
+
+species_2024 <- c("agrhum", "bare ground", "caraur", "carlent", "carnig", "carspec", "carsty", "casmer", 
+                  "chalat", "crust", "dead wood", "equarv", "equvar", "eriper", "fungi", "gauhum", "junarc", 
+                  "jundru", "junmer", "kalmic", "lichen", "litter", "lupspp", "moss", "phyemp", "phygla", 
+                  "pinvul", "poagla", "poaspp", "rock", "salarc", "salbar", "salcom", "salniv", "salsit", 
+                  "soil", "solmul", "tomst", "triglu")
+
+#Species in 2022 but not in 2024
+species_in_2022_not_2024 <- setdiff(species_2022, species_2024)
+print("Species in 2022 but not in 2024:")
+print(species_in_2022_not_2024)
+
+#Species in 2024 but not 2022
+species_in_2024_not_2022 <- setdiff(species_2024, species_2022)
+print("Species in 2024 but not in 2022:")
+print(species_in_2024_not_2022)
+
+
+ggplot(percent_cover_summary, aes(x = DATE, y = TotalPercentCover, color = SPECIES)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Percent Cover Changes per Species Over Time",
+       x = "Year", 
+       y = "Total Percent Cover",
+       color = "Species") +
+  theme_minimal()
 
 #####################NMDS changes in species cover
 #Make wide format
@@ -155,8 +194,8 @@ data(dune.env)
   #mutate(TRTMT = factor(TRTMT, levels = c("control", "warming")))%>%
   #mutate(DATE = factor(DATE, levels = c("2022", "2024")))%>%
   #mutate(FG_BROAD = factor(FG_BROAD, levels = c("FORBSV", "GRAMINOID", "ESHRUB", 
-                                            "DSHRUB", "MOSS", "LICHEN", 
-                                            "LITTER", "SOIL", "SLVASC")))%>%
+                                            #"DSHRUB", "MOSS", "LICHEN", 
+                                            #"LITTER", "SOIL", "SLVASC")))%>%
   #filter_at(vars(FG_BROAD), all_vars(!is.na(.)))
 
 #ggsave("Cover_topBottom.tiff", last_plot(), dpi = 300)
@@ -224,11 +263,10 @@ Height_ALL <- dataset %>%
 Height_ALL$PLOT <- as.factor(Height_ALL$PLOT)
 Height_ALL$TRTMT <- as.factor(Height_ALL$TRTMT)
 
+#Specify dplyr package for group_by and summarise functions 
 Height_ALL <- Height_ALL %>%
-  group_by(DATE, TRTMT, PLOT) %>%
-  #Cascading error from the line below, mutate calculates one mean for all the data
-  #whereas summarize using .groups = 'drop' outputs only one mean and drops all columns 
-  mutate(mean_height = mean(CanopyHeight.mm., na.rm = TRUE)) %>%
+  dplyr::group_by(DATE, TRTMT, PLOT) %>%
+  dplyr::summarize(mean_height = mean(CanopyHeight.mm., na.rm = TRUE)) %>%
   ungroup()
 
 #Convert to data frame before passing to MCMC 
@@ -256,9 +294,9 @@ ALL_Height_OTC <- MCMCglmm(mean_height ~ I(DATE - 2022),
                              burnin = 20000, 
                              prior = prior2)
 
-ALL_Height_OTC <- MCMCglmm(mean_height ~ I(DATE-2022), 
+ALL_Height_CTL <- MCMCglmm(mean_height ~ I(DATE-2022), 
                            #random = ~ DATE+PLOT, 
-                           data = Height_ALL_df[Height_ALL_df$TRTMT == "warming",], 
+                           data = Height_ALL_df[Height_ALL_df$TRTMT == "control",], 
                            family ="gaussian", 
                            pr = TRUE, 
                            nitt = 100000, 
@@ -365,17 +403,25 @@ ggplot(data=Height_ALL, aes(x=factor(DATE), y=mean_height,fill = factor(TRTMT)))
 
 ggsave("Height_boxplot.tiff", last_plot(), dpi = 300)
 
+##ANOVA to determine significance of change between years and warming/control 
+
+# Two-way ANOVA to test for interaction between Year and Treatment
+anova_result <- aov(mean_height ~ DATE * TRTMT, data = Height_ALL)
+
+# Summary of the ANOVA result
+summary(anova_result)
+
 ################################################
+####STOPPED HERE FEB. 18TH 
 #Species specific changes
 ###Get cover data from line 34-73
-## Feb 17th stopped here
 
 prior2 <- list(R = list(V = 1, nu = 0.002), 
                G = list(G1 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000), 
                         G2 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000)))
 
 ### Linear model for all species AUD Top and Bottom
-
+#SKIPPING
 #CTL
 
 SALIX <- coverTopBottom%>%
@@ -384,16 +430,17 @@ SALIX <- coverTopBottom%>%
   na.omit()
 
 
-AUD_plot_all_CTL <- MCMCglmm(cover ~ I(DATE-2022) * SPECIES, 
-                             random = ~ YEAR+PLOT, 
-                             data = AUD[AUD$TRTMT == "CTL",], 
+SAL_plot_all_CTL <- MCMCglmm(cover ~ I(DATE-2022) * SPECIES, 
+                             #random = ~ YEAR+PLOT, 
+                             data = SALIX[SALIX$TRTMT == "control",], 
                              family = "gaussian", pr = TRUE, nitt = 100000, 
                              burnin = 20000, prior = prior2)
-summary(AUD_plot_all_CTL)
+summary(SAL_plot_all_CTL)
 
 #OTC
-SAL_plot_all_OTC <- MCMCglmm(cover ~ I(YEAR-1996) * SPP, 
-                             random = ~ YEAR+PLOT, data = SALIX[SALIX$TRTMT == "warming",], 
+SAL_plot_all_OTC <- MCMCglmm(cover ~ I(DATE-2022) * SPECIES, 
+                             #random = ~ YEAR+PLOT, 
+                             data = SALIX[SALIX$TRTMT == "warming",], 
                              family = "gaussian", pr = TRUE, nitt = 100000, 
                              burnin = 20000, prior = prior2)
 
@@ -401,9 +448,9 @@ summary(SAL_plot_all_OTC)
 
 #Linear model for main species to check for difference in treatment
 
-SAL_plot_CAR <- MCMCglmm(cover ~ I(YEAR-2022)+TRTMT-1, 
-                            random = ~ YEAR + PLOT,
-                            data = SALIX[SALIX$SPP == "car",], 
+SAL_plot_CAR <- MCMCglmm(cover ~ I(DATE-2022)+TRTMT-1, 
+                            #random = ~ YEAR + PLOT,
+                            data = SALIX[SALIX$SPECIES == "car",], 
                             family = "gaussian", pr = TRUE, nitt = 100000, 
                             burnin = 20000, prior = prior2)
 summary(SAL_plot_CAR)
@@ -1456,10 +1503,10 @@ p<-plot_grid( prow, legend_b, ncol = 1, rel_heights = c(1, 0.1))
 
 ##############################Species change with top only################
 
-### Linear model for all species AUD Top
+### Linear model for all species hit number 
 #CTL
 
-AUD <- coverCanopy%>%
+SAL <- coverCanopy%>%
   filter(SITE=="AUDKULUHEIDI")%>%
   mutate(cover=cover*100)%>%
   na.omit()
