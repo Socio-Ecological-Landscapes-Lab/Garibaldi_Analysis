@@ -121,6 +121,7 @@ ggplot(percent_cover_summary, aes(x = DATE, y = TotalPercentCover, color = SPECI
 
 SITES<- coverTopBottom %>% 
         filter(SITE %in% c("Salix", "Cassiope","Meadow"))%>% 
+        filter(!SPECIES %in% "carspp")%>%
         select(DATE,SITE,TRTMT,PLOT, SPECIES, cover)%>% 
         pivot_wider(names_from = SPECIES, values_from = cover)
 
@@ -276,7 +277,7 @@ Height_ALL_df <- as.data.frame(Height_ALL)
                #G = list(G1 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000), 
                         #G2 = list(V = 1, nu = 1, alpha.mu = 0, alpha.v = 10000)))
 
-#Using a stronger prior without random variables 
+#Using a prior without random variables 
 prior2 <- list(
   R = list(V = 1, nu = 0.002)) #,
   #G = list(
