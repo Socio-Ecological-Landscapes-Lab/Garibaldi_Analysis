@@ -10,28 +10,6 @@ library(readxl)
 library(vegan)
 library(cowplot)
 
-##Climate data
-#clim<-read.table("./Raw data/climate_Iceland.txt", h=T, row.names= NULL)%>% 
-          #filter(month ==7)%>% 
-          #mutate(type=case_when(type=="temperature"~"July temperature (°C)",
-                                #type=="precipitation"~"July precipitation (cm)"))%>% 
-          #mutate(site=case_when(site=="Thingsvellir"~"Thingvellir",
-                       #TRUE~site))
-
-
-#clim_plot<-ggplot(data=clim, aes(x=year, y=value, col = site)) +
-          #geom_line() +
-          #ylab("") +
-          #xlab("Year")+
-          #labs(linetype="Sites",col="Sites")+
-          #scale_colour_brewer("", palette="Dark2")+
-          #facet_wrap(scale='free_y',~ type, ncol = 2)+
-          #theme_bw()+
-          #theme(strip.background = element_rect(fill = 'white'))
-
-
-#ggsave("clim_plot.tiff", clim_plot, dpi = 300)
-
 ##################################################
 
 #Calculate changes in vegetation
