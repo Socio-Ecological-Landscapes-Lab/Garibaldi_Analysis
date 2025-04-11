@@ -1,0 +1,51 @@
+SPP_code,Species name,Validated_23_08,Description
+x,Not measured,1,"In the past, ~30 point out of 100 points were not measured in most plots to save time but still sample all plots (most points not sampled was 37/100)"
+other,Other,1,"Points that hit something other than the soil, rock or a species (e.g. tags, sensors, etc)"
+litter,Litter,1,Dead material that was no longer attached to the plants
+soil,Soil,1,Bare soil without moss or lichen on it
+rock,Rock,1,Points that hit rocks where a rock was defined as anything larger than 1cm diameter
+moss,Bryophyte ,1,All bryophytes were grouped together as no one knew them to species
+lichen,Lichen,1,All lichen were grouped together as no one knew them to species
+abilas,Abies lasiocarpa,1,
+agrhum,Agrostis humilis,1,
+agrvar,Agrostis variabilis,1,
+antros,Antennaria rosea,1,
+antumb,Antennaria umbrinella,1,
+caraur,Carex aurea,1,
+carlent,Carex lenticularis,1,Carex lenticularis var lipocarpa. This is the dominant carex species at the site
+carmed,Carex media,1,
+carspe,Carex spectabilis,1,
+carspp,Carex spp. ,1,A sedge we could not ID to species
+casmer,Cassiope mertensiana,1,
+casmin,Castilleja miniata,1,
+chaang,Chamerion angustifolium,1,
+chalat,Chamerion latifolium,1,
+equarv,Equisetum arvense,1,
+equvar,Equisetum variegatum,1,
+galhum,Gaultheria humifusa,1,
+junarc,Juncus arcticus,1,Juncus arcticus ssp. Alaskanus
+jundru,Juncus drummondii ,1,
+junmer,Juncus mertensiana,1,
+kalmic,Kalmia microphylla,1,
+leppyr,Leptarrhena pyrolifolia,1,
+lupspp,Lupinus spp. ,1,
+minbif,Minuartia biflora,1,
+phyemp,Phyllodoce empetriformis,1,
+phygla,Phyllodoce glanduliflora,1,
+pinvul,Pinguicula vulgaris,1,
+pladil,Platanthera dilatata,1,
+poaalp,Poa alpina,1,
+poagla,Poa glauca,1,
+salarc,Salix arctica,1,
+salbar,Salix barclayi,1,
+salcom,Salix commutata,1,
+salniv,Salix nivalis,1,
+salsit,Salix sitchensis,1,
+seddiv,Sedum divergens,1,
+senfre,Senecio fremontii,1,
+silaca,Silene acaulis,1,
+solmul,Solidago multiradiata,1,found in plot
+spirom,Spiranthes romanzoffiana,1,
+triglu,Triantha glutinosa,1,
+trispi,Trisetum spicatum,1,
+tsumer,Tsuga mertensiana,1,
